@@ -1,11 +1,12 @@
 # Slush Generator for Javascript libs
 
+Start a new Javascript library in a instant
+
 ## How
 
 ```
 npm install -g slush slush-jslib
-mkdir mylib;cd mylib
-slush jslib
+mkdir mylib && cd mylib && slush jslib
 
 ```
 
@@ -24,6 +25,6 @@ slush jslib
 - run `npm version` with one of the arguments:
 	* `major` => v1.0.0
 	* `minor` => v0.1.0
-	( `patch` => v0.0.1
+	* `patch` => v0.0.1
 - `git push` and `git push --tags`
 - optionally, `bower publish` and/or `npm publish`
