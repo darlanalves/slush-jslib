@@ -1,4 +1,4 @@
-# Lib
+# Such Lib
 
 Such Awesome
 
@@ -10,7 +10,7 @@ Very Javascript
 ## Make me
 
 ```
-gulp tdd
+make tdd
 
 // now start editing in /src and /test
 
@@ -18,8 +18,7 @@ gulp tdd
 
 ## If you are ready to build and release a version
 
-- stop gulp
-- run `gulp release`
+- run `make build` to build the lib
 - run `npm version` with one of the arguments:
 	* `major` => v1.0.0
 	* `minor` => v0.1.0

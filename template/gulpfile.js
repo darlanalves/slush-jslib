@@ -2,45 +2,42 @@
 'use strict';
 
 var gulp = require('gulp'),
-	uglify = require('gulp-uglify'),
-	multipipe = require('multipipe'),
-	sourcemaps = require('gulp-sourcemaps'),
-	karma = require('karma').server,
 	version = require('./package.json').version;
 
 function buildRelease() {
+	var uglify = require('gulp-uglify'),
+		multipipe = require('multipipe'),
+		babel = require('gulp-babel'),
+		concat = require('gulp-concat'),
+		rename = require('gulp-rename'),
+		wrap = require('gulp-wrap'),
+		babelOptions = require(__dirname + '/babel-options.js'),
+		wrapper = require('fs').readFileSync(__dirname + '/build.template.js', 'utf8');
+
+	wrapper = wrapper.replace('<content>', '<%='+' contents %>');
 	console.log('Building version ' + version);
+
 	multipipe(
 		gulp.src('src/**/*.js'),
-		sourcemaps.init(),
+		concat('<%= name %>.js'),
+		babel(babelOptions),
+		wrap(wrapper),
+		gulp.dest('dist'),
 		uglify(),
-		sourcemaps.write('.'),
+		rename({ suffix: '.min' }),
 		gulp.dest('dist'),
 		onError
 	);
 }
 
-function runTests(done) {
-	karma.start({
-		configFile: __dirname + '/karma.conf.js',
-		singleRun: true
-	}, done);
-}
-
-function tdd(done) {
-	karma.start({
-		configFile: __dirname + '/karma.conf.js'
-	}, done);
-}
-
 function onError(err) {
 	if (err) {
-		console.warn(err.message || err);
+		console.warn('ERROR: ' + err.message || err);
 		if (err.stack) console.log(err.stack);
+		return;
 	}
+
+	console.log('Done.');
 }
 
-gulp.task('build', ['test'], buildRelease);
-gulp.task('tdd', tdd);
-gulp.task('test', runTests);
-gulp.task('default', ['tdd']);
+gulp.task('build', buildRelease);
