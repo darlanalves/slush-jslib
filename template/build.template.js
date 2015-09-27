@@ -1,7 +1,7 @@
 (function(global) {
 	'use strict';
 
-	<content>
+	/* content goes here */
 
 	// TODO: replace MyLibrary with the actual library name
 

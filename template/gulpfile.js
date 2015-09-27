@@ -14,7 +14,7 @@ function buildRelease() {
 		babelOptions = require(__dirname + '/babel-options.js'),
 		wrapper = require('fs').readFileSync(__dirname + '/build.template.js', 'utf8');
 
-	wrapper = wrapper.replace('<content>', '<%='+' contents %>');
+	wrapper = wrapper.replace('/* content goes here */', '<'+'%= contents %>');
 	console.log('Building version ' + version);
 
 	multipipe(
