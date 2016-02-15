@@ -8,7 +8,6 @@ module.exports = function(config) {
         browsers: ['PhantomJS'],
         frameworks: ['jasmine'],
         reporters: ['dots', 'coverage'],
-        plugins: ['karma-coverage'],
 
         files: [
             require.resolve('babel-polyfill/browser.js'),

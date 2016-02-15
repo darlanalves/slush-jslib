@@ -25,13 +25,18 @@ var plugins = [
     babel({ exclude: 'node_modules/**' })
 ];
 
+var destPath = 'dist/<%= nameSlug %>.js';
+
 if (process.env.BUNDLE) {
     plugins.push(uglify());
+    destPath = 'dist/<%= nameSlug %>.min.js'
 }
+
 
 module.exports = {
     entry: './src/index.js',
-    format: 'cjs',
-    dest: 'dist/<%= nameSlug %>.js',
+    format: 'umd',
+    dest: destPath,
+    moduleName: '<%= nameCased %>',
     plugins: plugins
 };

@@ -22,6 +22,7 @@ function build() {
         bundle.write({
             dest: config.dest,
             format: config.format,
+            moduleName: config.moduleName,
             sourceMap: true
         });
     }

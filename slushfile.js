@@ -131,6 +131,7 @@ gulp.task('default', function(exit) {
                 }
 
                 answers.nameSlug = _.slugify(answers.name);
+                answers.nameCased = _.capitalize(_.camelize(answers.name));
                 callback(null, answers);
             }
         );
