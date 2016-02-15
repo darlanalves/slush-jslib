@@ -12,11 +12,19 @@ function onEnd() {
     console.log('Done.');
 }
 
-function build(done) {
+function build() {
     var rollup = require('rollup');
     var config = require('./rollup.config.js');
 
-    return rollup.rollup(config).then(onEnd, onError).then(done);
+    return rollup.rollup(config).then(onBundle).then(onEnd, onError);
+
+    function onBundle(bundle) {
+        bundle.write({
+            dest: config.dest,
+            format: config.format,
+            sourceMap: true
+        });
+    }
 }
 
 function watch() {

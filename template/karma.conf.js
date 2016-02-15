@@ -11,6 +11,7 @@ module.exports = function(config) {
         plugins: ['karma-coverage'],
 
         files: [
+            require.resolve('babel-polyfill/browser.js'),
             'dist/<%= nameSlug %>.js',
             'test/**/*.spec.js'
         ],

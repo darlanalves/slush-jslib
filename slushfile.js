@@ -181,8 +181,8 @@ gulp.task('default', function(exit) {
             return;
         }
 
-        if (/^.+\/.+$/.test(repository)) {
-            repository = 'git://github.com/' + repository;
+        if (/^[^\/]+\/.+$/.test(repository)) {
+            repository = 'https://github.com/' + repository;
         }
 
         repository = {
@@ -214,7 +214,7 @@ gulp.task('default', function(exit) {
     }
 
     function stringify(json) {
-        return JSON.stringify(json, null, '\t');
+        return JSON.stringify(json, null, '    ');
     }
 
     run();
