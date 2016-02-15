@@ -1,0 +1,15 @@
+{
+    "name": "<%= nameSlug %>",
+    "version": "<%= version %>",
+    "description": "<%= description %>",
+    "license": "MIT",
+    "main": "dist/<%= nameSlug %>.js",
+    "author": <%= author %>,
+    "repository": <%= repository %>,
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "vendor",
+        "test"
+    ]
+}

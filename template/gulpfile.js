@@ -1,43 +1,27 @@
 /* jshint node: true */
 'use strict';
 
-var gulp = require('gulp'),
-	version = require('./package.json').version;
+var gulp = require('gulp');
 
-function buildRelease() {
-	var uglify = require('gulp-uglify'),
-		multipipe = require('multipipe'),
-		babel = require('gulp-babel'),
-		concat = require('gulp-concat'),
-		rename = require('gulp-rename'),
-		wrap = require('gulp-wrap'),
-		babelOptions = require(__dirname + '/babel-options.js'),
-		wrapper = require('fs').readFileSync(__dirname + '/build.template.js', 'utf8');
-
-	wrapper = wrapper.replace('/* content goes here */', '<'+'%= contents %>');
-	console.log('Building version ' + version);
-
-	multipipe(
-		gulp.src('src/**/*.js'),
-		concat('<%= name %>.js'),
-		babel(babelOptions),
-		wrap(wrapper),
-		gulp.dest('dist'),
-		uglify(),
-		rename({ suffix: '.min' }),
-		gulp.dest('dist'),
-		onError
-	);
+function onError(error) {
+    console.warn('ERROR: ' + error.message || error);
+    if (error.stack) console.log(error.stack);
 }
 
-function onError(err) {
-	if (err) {
-		console.warn('ERROR: ' + err.message || err);
-		if (err.stack) console.log(err.stack);
-		return;
-	}
-
-	console.log('Done.');
+function onEnd() {
+    console.log('Done.');
 }
 
-gulp.task('build', buildRelease);
+function build(done) {
+    var rollup = require('rollup');
+    var config = require('./rollup.config.js');
+
+    return rollup.rollup(config).then(onEnd, onError).then(done);
+}
+
+function watch() {
+    gulp.watch('src/**/*.js', ['build']);
+}
+
+gulp.task('watch', watch);
+gulp.task('build', build);

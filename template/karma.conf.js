@@ -1,23 +1,31 @@
 /* jshint node: true */
+'use strict';
+
 module.exports = function(config) {
-	'use strict';
+    config.set({
+        autoWatch: true,
 
-	var babelOptions = require(__dirname + '/babel-options.js');
+        browsers: ['PhantomJS'],
+        frameworks: ['jasmine'],
+        reporters: ['dots', 'coverage'],
+        plugins: ['karma-coverage'],
 
-	config.set({
-		browsers: ['PhantomJS'],
-		frameworks: ['jasmine'],
-		files: [
-			'src/**/*.js',
-			'test/**/*.spec.js'
-		],
-		preprocessors: {
-			'src/**/*.js': ['babel'],
-			// uncomment to enable ES6 on tests too
-			// 'test/**/*.js': ['babel']
-		},
-		babelPreprocessor: {
-			options: babelOptions
-		}
-	});
+        files: [
+            'dist/<%= nameSlug %>.js',
+            'test/**/*.spec.js'
+        ],
+
+        preprocessors: {
+            'dist/<%= nameSlug %>.js': ['coverage'],
+            'test/**/*.js': ['babel']
+        },
+
+        coverageReporter: {
+            dir: 'test/coverage/',
+            reporters: [
+                { type: 'html' },
+                { type: 'text-summary' }
+            ]
+        },
+    });
 };

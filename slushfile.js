@@ -2,8 +2,6 @@
 'use strict';
 
 var gulp = require('gulp'),
-    util = require('gulp-util'),
-    install = require('gulp-install'),
     conflict = require('gulp-conflict'),
     template = require('gulp-template'),
     rename = require('gulp-rename'),
@@ -15,7 +13,7 @@ var gulp = require('gulp'),
     path = require('path');
 
 gulp.task('default', function(exit) {
-    var basename = path.basename(path.resolve('.'));
+    var basename = path.basename(process.cwd());
 
     function run(oldAnswers) {
         oldAnswers = oldAnswers || {};
@@ -34,11 +32,11 @@ gulp.task('default', function(exit) {
             default: oldAnswers.version || '0.0.0'
         }, {
             name: 'author',
-            message: 'Author:',
+            message: 'Author (name <email>):',
             default: oldAnswers.author || undefined
         }, {
             name: 'repository',
-            message: 'Git repository:',
+            message: 'Git repository (user/repo):',
             default: oldAnswers.repository || undefined
         }];
 
@@ -46,6 +44,17 @@ gulp.task('default', function(exit) {
             if (err) {
                 return exit();
             }
+
+            var _config = {
+                name: config.name,
+                description: config.description,
+                version: config.version,
+                author: config.author,
+                repository: config.repository,
+            };
+
+            console.log(JSON.stringify(_config, null, '  '));
+            console.log('\n\n');
 
             inquirer.prompt([{
                 name: 'confirm',
@@ -57,29 +66,28 @@ gulp.task('default', function(exit) {
                     return run(config);
                 }
 
+                getRepository(config);
+                getAuthor(config);
+
                 async.series([
-
                     function(callback) {
-                        util.log('Making package.json');
-                        savePackageJson(config, callback);
+                        console.log('Making manifest files');
+                        try { saveManifestFiles(config, callback); }
+                        catch (e) { callback(e); }
                     },
 
                     function(callback) {
-                        util.log('Making bower.json');
-                        saveBowerJson(config, callback);
-                    },
-
-                    function(callback) {
-                        util.log('Copying files');
-                        copyTemplateFiles(config, callback);
-                    },
-
-                    function(callback) {
-                        util.log('Installing modules');
-                        runNpm(callback);
+                        console.log('Copying files');
+                        try { copyTemplateFiles(config, callback); }
+                        catch (e) { callback(e); }
                     }
-                ], function(err) {
-                    if (err) util.log(util.colors.red('[error] ') + err);
+                ], function(error) {
+                    if (error) {
+                        console.log('[error] ', error);
+                    } else {
+                        console.log('[done]');
+                        console.log('-- Don`t forget to install npm modules --');
+                    }
 
                     exit();
                 });
@@ -88,8 +96,11 @@ gulp.task('default', function(exit) {
     }
 
     function getAnswers(prompts, callback) {
-        if (fs.existsSync('./package.json')) {
-            var projectJson = require('./package.json');
+        var cwd = process.cwd();
+        var manifest = path.join(cwd, 'package.json');
+
+        if (fs.existsSync(manifest)) {
+            var projectJson = require(manifest);
 
             try {
                 prompts.forEach(function(o) {
@@ -98,9 +109,12 @@ gulp.task('default', function(exit) {
 
                     if (!(name in projectJson) || value === undefined) return;
 
-                    // special case: author is object
                     if (name === 'author' && typeof value === 'object') {
                         value = value.name + ' <' + value.email + '>';
+                    }
+
+                    if (name === 'repository' && typeof value === 'object') {
+                        value = value.url;
                     }
 
                     o.default = value;
@@ -122,33 +136,17 @@ gulp.task('default', function(exit) {
         );
     }
 
-    function savePackageJson(config, callback) {
-        var json = makePackageJson(config);
-        writeJson('./package.json', json, callback);
-    }
-
-    function saveBowerJson(config, callback) {
-        var json = getCommonJsonConfig(config);
-
-        json.license = 'MIT';
-        json.ignore = [
-            '**/.*',
-            'node_modules',
-            'bower_components',
-            'test'
-        ];
-
-        writeJson('./bower.json', json, callback);
-    }
-
-    function writeJson(file, json, callback) {
-        fs.writeFile(file, JSON.stringify(json, null, '\t'), function(err) {
-            callback(err, true);
-        });
+    function saveManifestFiles(answers, callback) {
+        runSteps([
+            gulp.src(__dirname + '/manifest/*.json'),
+            template(answers),
+            conflict('./'),
+            gulp.dest('./')
+        ], callback);
     }
 
     function copyTemplateFiles(answers, callback) {
-        var pipe = multipipe(
+        runSteps([
             gulp.src(__dirname + '/template/**'),
             template(answers),
             rename(function(file) {
@@ -158,98 +156,65 @@ gulp.task('default', function(exit) {
             }),
             conflict('./'),
             gulp.dest('./')
-        );
-
-        pipe.on('end', function() {
-            util.log('Files copied');
-            callback(null, true);
-        });
-
-        pipe.on('error', function(err) {
-            callback(err, null);
-        });
+        ], callback);
     }
 
-    function runNpm(callback) {
-        var pipe = multipipe(gulp.src('./package.json'), install());
+    function runSteps(steps, callback) {
+        steps.push(cb);
+        multipipe(steps);
 
-        pipe.on('end', function() {
-            util.log('Modules installed');
+        function cb(error) {
+            if (error) {
+                callback(error, null);
+                return;
+            }
+
             callback(null, true);
-        });
-
-        pipe.on('data', function(data) {
-            return data;
-        });
-
-        pipe.on('error', function(err) {
-            callback(err, null);
-        });
+        }
     }
 
-    function makePackageJson(answers) {
-        var json = getCommonJsonConfig(answers);
+    function getRepository(answers) {
+        var repository = answers.repository;
 
-        json.devDependencies = {
-            'gulp': '3.8.6',
-            'gulp-babel': '5.2.1',
-            'gulp-concat': '2.6.0',
-            'gulp-rename': '1.2.2',
-            'gulp-uglify': '0.3.1',
-            'gulp-wrap': '0.11.0',
-            'jasmine-core': '2.3.4',
-            'karma': '0.12.37',
-            'karma-babel-preprocessor': '5.2.2',
-            'karma-coverage': '0.2.7',
-            'karma-jasmine': '0.3.6',
-            'karma-phantomjs-launcher': '0.1.4',
-            'multipipe': '0.1.1'
-        };
-
-        json.scripts = {
-            'test': './node_modules/karma/bin/karma start karma.conf.js --single-run'
-        };
-
-        if (answers.repository) {
-            json.repository = {
-                type: 'git',
-                url: answers.repository
-            };
+        if (!repository) {
+            answers.repository = '""';
+            return;
         }
 
-        return json;
+        if (/^.+\/.+$/.test(repository)) {
+            repository = 'git://github.com/' + repository;
+        }
+
+        repository = {
+            type: 'git',
+            url: repository
+        };
+
+        answers.repository = stringify(repository);
     }
 
     function getAuthor(answers) {
-        if (answers.author) {
-            if (/</.test(answers.author)) {
-                var author = answers.author.split('<');
+        var author = answers.author;
 
-                return {
-                    name: author[0].trim(),
-                    email: author[1].replace('>', '').trim()
-                };
-            } else {
-                return answers.author;
-            }
+        if (!author) {
+            answers.author = '""';
+            return;
+        }
+
+        if (/</.test(author)) {
+            author = author.split('<');
+
+            author = {
+                name: author[0].trim(),
+                email: author[1].replace('>', '').trim()
+            };
+
+            answers.author = stringify(author);
         }
     }
 
-    function getCommonJsonConfig(answers) {
-        var json = {
-            name: answers.nameSlug,
-            description: answers.description,
-            version: answers.version,
-            main: 'src/' + answers.nameSlug + '.js'
-        };
-
-        var author = getAuthor(answers);
-
-        if (author) {
-            json.author = author;
-        }
-
-        return json;
+    function stringify(json) {
+        return JSON.stringify(json, null, '\t');
     }
 
     run();
